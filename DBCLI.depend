@@ -1,0 +1,16 @@
+# depslib dependency file v1.0
+1496018745 source:g:\2017\2do tri\tdb2\dbcli\main.cpp
+	<iostream>
+	<string.h>
+	"CLI.h"
+
+1496023890 source:g:\2017\2do tri\tdb2\dbcli\src\cli.cpp
+	"CLI.h"
+
+1496019716 g:\2017\2do tri\tdb2\dbcli\include\cli.h
+	<iostream>
+	<string>
+	<sstream>
+	<iterator>
+	<vector>
+
