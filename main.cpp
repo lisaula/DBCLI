@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string.h>
 #include "CLI.h"
+#include "DatabaseManager.h"
 using namespace std;
 
 string getNext(){

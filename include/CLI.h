@@ -1,14 +1,13 @@
 #ifndef CLI_H
 #define CLI_H
-#include <iostream>
-#include <string>
-#include <sstream>  //for std::istringstream
 #include <iterator> //for std::istream_iterator
 #include <vector>   //for std::vector
-using namespace std;
+#include "Utils.h"
+#include "DatabaseManager.h"
 class CLI
 {
     public:
+        DatabaseManager * dbm;
         vector<string> getString();
         void init();
         CLI();

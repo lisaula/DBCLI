@@ -1,5 +1,4 @@
 #include "CLI.h"
-
 const string commands = "1. CREATE \n\tDATABASE <NAME> <SIZE_IN_GB>[;]\n\tTABLE <NAME> \n\t\t <FIELD_NAME> <TYPE(SIZE)>[;]\n>"
 "2. DROP \n\tDATABASE <NAME>[;]\n\tTABLE <NAME>[;]\n"
 "3. INSERT INTO <TABLE>\n\t<COLUMN1> = <VALUE>\n\t<COLUMN2> = <VALUE>\n\t<COLUMN...> = <VALUE> [;]\n"
@@ -8,17 +7,15 @@ const string commands = "1. CREATE \n\tDATABASE <NAME> <SIZE_IN_GB>[;]\n\tTABLE 
 "6. SELECT [*]\n\t<FIELD1>\n\t<FIELD2>\n\t<FIELD3>\n   FROM <TABLE>\n   WHERE [CONDITION] [;]\n"
 "7. HELP[;]\n"
 "8. EXIT [;]";
+
 CLI::CLI()
 {
     //ctor
+    dbm = new DatabaseManager();
     init();
 }
 
-void printMsg(string msg){
-    cout<<msg<<endl;
-}
-
-bool validateEntranceLen(vector<string> entrance, int expected){
+bool validateEntranceLen(vector<string> entrance, unsigned int expected){
     if(entrance.size() < expected){
         printMsg("Not enough entrance detected");
         return false;
@@ -39,10 +36,18 @@ void CLI::init(){
             if(validateEntranceLen(entrance, 2) && entrance[1] == "TABLE"){
                 printMsg("Create table successfully");
             }else if(validateEntranceLen(entrance, 2) && entrance[1] == "DATABASE"){
-                printMsg("Create database successfully");
+                uint32 size=0;
+                from_String_to_uint(entrance[3],&size);
+                dbm->create_database(entrance[2], size);
             }else{
                 printMsg("Command not supported.");
             }
+        }else if(entrance[0] == "USE"){
+            if(entrance.size() < 2){
+                printMsg("Not enough arguments.");
+                continue;
+            }
+            dbm->use_database(entrance[1]);
         }
         else if(entrance[0] == "DROP"){
             if(validateEntranceLen(entrance, 2) && entrance[1] == "TABLE"){
