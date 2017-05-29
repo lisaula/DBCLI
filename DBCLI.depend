@@ -34,14 +34,14 @@
 	<sstream>
 	<math.h>
 
-1496043401 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
+1496051343 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
 	<windows.h>
 	"Utils.h"
 
-1496041285 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
+1496051324 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
 	"CLI.h"
 
-1496048024 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
+1496051646 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
 	"DatabaseManager.h"
 
 1496045161 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp

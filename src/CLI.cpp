@@ -53,7 +53,11 @@ void CLI::init(){
             if(validateEntranceLen(entrance, 2) && entrance[1] == "TABLE"){
                 printMsg("Drop table successfully");
             }else if(validateEntranceLen(entrance, 2) && entrance[1] == "DATABASE"){
-                printMsg("Drop database successfully");
+                if(entrance.size() < 3){
+                    printMsg("Not enough arguments.");
+                    continue;
+                }
+                dbm->drop_database(entrance[2]);
             }else{
                 printMsg("Command not supported.");
             }

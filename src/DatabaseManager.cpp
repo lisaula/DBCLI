@@ -148,8 +148,16 @@ void DatabaseManager::use_database(string name){
     cout<<"itable bitmap pointer: "<<dbh.sb.ptr_itable_bipmap<<endl;
     cout<<"blocks bitmap pointer: "<<dbh.sb.ptr_blocks_bitmap<<endl;
 }
+void DatabaseManager::drop_database(string name){
+    name += ".dat";
+    string database_path =  PATH + name;
 
-DatabaseManager::~DatabaseManager()
-{
-    //dtor
+    if(remove(database_path.c_str()) !=0){
+        printMsg("Error: while trying to delete: "+name);
+    }else
+        printMsg("Drop database successfully");
+}
+
+
+DatabaseManager::~DatabaseManager(){
 }
