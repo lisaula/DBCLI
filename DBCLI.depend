@@ -14,3 +14,36 @@
 	<iterator>
 	<vector>
 
+1496040249 source:g:\2017\2do tri\tdb2\cli_db\main.cpp
+	<iostream>
+	<string.h>
+	"CLI.h"
+	"DatabaseManager.h"
+
+1496038731 g:\2017\2do tri\tdb2\cli_db\include\cli.h
+	<iterator>
+	<vector>
+	"Utils.h"
+	"DatabaseManager.h"
+
+1496045644 g:\2017\2do tri\tdb2\cli_db\include\utils.h
+	<fstream>
+	<iostream>
+	<string.h>
+	<string>
+	<sstream>
+	<math.h>
+
+1496043401 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
+	<windows.h>
+	"Utils.h"
+
+1496041285 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
+	"CLI.h"
+
+1496048024 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
+	"DatabaseManager.h"
+
+1496045161 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
+	"Utils.h"
+
