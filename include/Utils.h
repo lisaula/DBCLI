@@ -8,6 +8,8 @@
 #include <string>
 #include <sstream>
 #include <math.h>
+#include <vector>
+#include "TYPE.h"
 
 #define uint32 unsigned int
 #define uint64 unsigned long int
@@ -17,6 +19,8 @@
 #define SB_SIZE sizeof(struct SB)
 #define ITABLE_SIZE sizeof(struct i_table)
 #define CHAR_BITS_SIZE (sizeof(char)*8)
+#define FIELD_SIZE sizeof(struct field)
+#define BLOCK_PTR_SIZE sizeof(uint32)
 
 #define PERCENTAGE_FOR_ITABLES 0.05
 #define MAX_STRING_SIZE 24
@@ -33,6 +37,7 @@ struct SB{
     uint32 itables_count;
     uint32 free_itables_count;
     uint64 ptr_itable_bipmap;
+    uint64 FD_size;
 };
 
 struct Database_Handler{
@@ -41,17 +46,31 @@ struct Database_Handler{
     uint32 blocks_bitmap_size;
     char* itable_bitmap;
     char* blocks_bitmap;
-    uint32 FD_size;
 };
 
 struct i_table{
     char name[MAX_STRING_SIZE];
     uint32 first_block;
     uint32 records_count;
+    uint32 record_size;
     uint16 fields_count;
     uint64 table_size;
 };
+struct field{
+    char name[MAX_STRING_SIZE];
+    int type;
+    int size;
+};
 
+bool validateEntranceLen(vector<string> entrance, unsigned int expected);
+void write_SB(struct Database_Handler dbh);
+void write_bitmap(string database_name,char * bitmap,uint32 size, uint64 ptr_bitmap);
+int get_type(string s);
+int get_type_len(vector<string> *entrance);
+void erase_from_vector(vector<string>* vector_, int count);
+void read_itable(struct Database_Handler dbh, struct i_table *it, uint32 n_itable);
+void write_itable(struct Database_Handler dbh, struct i_table it, uint32 n_itable);
+void write_block(struct Database_Handler dbh, char *block, uint32 n_block);
 uint64 from_GB_bytes_convertion(uint32 n, int type);
 uint64 from_MB_bytes_convertion(uint32 n, int type);
 void printMsg(string msg);

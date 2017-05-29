@@ -1,7 +1,6 @@
 #ifndef CLI_H
 #define CLI_H
 #include <iterator> //for std::istream_iterator
-#include <vector>   //for std::vector
 #include "Utils.h"
 #include "DatabaseManager.h"
 class CLI

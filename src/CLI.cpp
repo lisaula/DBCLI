@@ -15,14 +15,6 @@ CLI::CLI()
     init();
 }
 
-bool validateEntranceLen(vector<string> entrance, unsigned int expected){
-    if(entrance.size() < expected){
-        printMsg("Not enough entrance detected");
-        return false;
-    }
-    return true;
-}
-
 void CLI::init(){
     bool exit = false;
     while(!exit){
@@ -34,8 +26,11 @@ void CLI::init(){
         }else if(entrance[0] == "CREATE"){
 
             if(validateEntranceLen(entrance, 2) && entrance[1] == "TABLE"){
-                printMsg("Create table successfully");
+                dbm->create_table(entrance);
             }else if(validateEntranceLen(entrance, 2) && entrance[1] == "DATABASE"){
+                if(!validateEntranceLen(entrance,4)){
+                    continue;
+                }
                 uint32 size=0;
                 from_String_to_uint(entrance[3],&size);
                 dbm->create_database(entrance[2], size);
@@ -84,7 +79,7 @@ void CLI::init(){
 
 vector<string> CLI::getString(){
 
-    cout<<"DBCLI >";
+    cout<<"DBCLI/"<<dbm->use<<" >";
     string txt;
     vector<string> entrance;
     bool exit = false;

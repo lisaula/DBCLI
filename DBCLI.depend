@@ -20,30 +20,33 @@
 	"CLI.h"
 	"DatabaseManager.h"
 
-1496038731 g:\2017\2do tri\tdb2\cli_db\include\cli.h
+1496077830 g:\2017\2do tri\tdb2\cli_db\include\cli.h
 	<iterator>
-	<vector>
 	"Utils.h"
 	"DatabaseManager.h"
 
-1496045644 g:\2017\2do tri\tdb2\cli_db\include\utils.h
+1496088047 g:\2017\2do tri\tdb2\cli_db\include\utils.h
 	<fstream>
 	<iostream>
 	<string.h>
 	<string>
 	<sstream>
 	<math.h>
+	<vector>
+	"TYPE.h"
 
-1496051343 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
+1496082076 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
 	<windows.h>
 	"Utils.h"
 
-1496051324 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
+1496088582 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
 	"CLI.h"
 
-1496051646 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
+1496088551 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
 	"DatabaseManager.h"
 
-1496045161 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
+1496089140 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
 	"Utils.h"
+
+1496080442 g:\2017\2do tri\tdb2\cli_db\include\type.h
 
