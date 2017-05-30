@@ -3,11 +3,14 @@
 #include <iterator> //for std::istream_iterator
 #include "Utils.h"
 #include "DatabaseManager.h"
+#include "Lexer.h"
 class CLI
 {
     public:
+        Lexer *lexer;
         DatabaseManager * dbm;
-        vector<string> getString();
+        string getString();
+
         void init();
         CLI();
         virtual ~CLI();

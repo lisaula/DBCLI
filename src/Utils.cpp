@@ -162,7 +162,7 @@ int get_type_len(vector<string> *entrance){
         erase_from_vector(entrance,2);
         return 8;
     }else if((*entrance)[1].find("CHAR") != std::string::npos){
-        if((*entrance)[1].find("(") != std::string::npos){
+        /*if((*entrance)[1].find("(") != std::string::npos){
             string s = "";
             uint32 count = 5;
             if((*entrance)[1].size() < count){
@@ -187,7 +187,7 @@ int get_type_len(vector<string> *entrance){
             }
             erase_from_vector(entrance,2);
             return n;
-        }else{
+        }else{*/
             if(!validateEntranceLen((*entrance),3)){
                 return -1;
             }
@@ -220,7 +220,7 @@ int get_type_len(vector<string> *entrance){
                 printMsg("Error: Invalid format.");
                 return -1;
             }
-        }
+        //}
     }else{
         printMsg("Error: not a supported type.");
         return -1;

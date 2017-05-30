@@ -12,13 +12,23 @@ CLI::CLI()
 {
     //ctor
     dbm = new DatabaseManager();
+    lexer = new Lexer();
     init();
 }
 
 void CLI::init(){
     bool exit = false;
     while(!exit){
-        vector<string> entrance = getString();
+        string input = getString();
+        lexer->set_input(input);
+        vector<string> entrance;
+        try {
+            entrance = lexer->build_vector();
+        }
+            catch (const std::invalid_argument& ia) {
+            std::cerr << "Invalid format: " << ia.what() << '\n';
+            continue;
+        }
         if(entrance.size() ==0)
             continue;
         if(entrance[0] == "HELP"){
@@ -77,29 +87,31 @@ void CLI::init(){
     }
 }
 
-vector<string> CLI::getString(){
+string CLI::getString(){
 
     cout<<"DBCLI/"<<dbm->use<<" >";
     string txt;
     vector<string> entrance;
     bool exit = false;
+    string s ="";
     while(!exit){
         getline(cin, txt);
         if (txt.find(";") != std::string::npos){
-            int len = txt.size();
-            txt[len-1]=' ';
+            //int len = txt.size();
+            //txt[len-1]=' ';
             exit = true;
-        }
-
-        std::istringstream ss(txt);
-        std::istream_iterator<std::string> begin(ss), end;
-        std::vector<std::string> arrayTokens(begin, end);
-        while(arrayTokens.size()>0){
+        }else
+            txt.append(" ");
+        s.append(txt);
+        //std::istringstream ss(txt);
+        //std::istream_iterator<std::string> begin(ss), end;
+        //std::vector<std::string> arrayTokens(begin, end);
+        /*while(arrayTokens.size()>0){
             entrance.push_back(arrayTokens[0]);
             arrayTokens.erase(arrayTokens.begin());
-        }
+        }*/
     }
-    return entrance;
+    return s;
 }
 
 CLI::~CLI()

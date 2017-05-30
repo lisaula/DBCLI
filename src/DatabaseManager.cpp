@@ -187,7 +187,7 @@ void DatabaseManager::create_table(vector<string>entrance){
     }
 
     uint32 n_itable = next_available(dbh.itable_bitmap, dbh.sb.itables_count);
-    cout<<"next itable available :"<<n_itable<<endl;
+    //cout<<"next itable available :"<<n_itable<<endl;
     if(n_itable == (unsigned int)-1){
         printMsg("Not enough i_tables available");
         return;
@@ -223,7 +223,7 @@ void DatabaseManager::create_table(vector<string>entrance){
         if(f.size<0)
             return;
         fields.push_back(f);
-        cout<<"size "<<f.size<<endl;
+        //cout<<"size "<<f.size<<endl;
         it.record_size +=f.size;
     }
     it.record_size+=1;//byte de borrado;
@@ -233,7 +233,7 @@ void DatabaseManager::create_table(vector<string>entrance){
         return;
     }
     uint32 n_block = next_available(dbh.blocks_bitmap,dbh.sb.blocks_count);
-    cout<<"next block available :"<<n_block<<endl;
+    //cout<<"next block available :"<<n_block<<endl;
     if(n_block == (unsigned int)-1){
         printMsg("Not enough blocks available");
         return;
@@ -251,11 +251,11 @@ void DatabaseManager::create_table(vector<string>entrance){
     struct field *fields_array = &fields[0];
     memcpy(&block[BLOCK_PTR_SIZE],(void*)fields_array,FIELD_SIZE*it.fields_count);
 
-    for(uint32 i = 0; i< fields.size(); i++){
+    /*for(uint32 i = 0; i< fields.size(); i++){
         cout<<fields_array[i].name<<endl;
         cout<<fields_array[i].type<<endl;
         cout<<fields_array[i].size<<endl;
-    }
+    }*/
     //WRITING PROCESS
 
     write_block(dbh,block,n_block);
