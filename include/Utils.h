@@ -10,6 +10,8 @@
 #include <math.h>
 #include <vector>
 #include "TYPE.h"
+#include <stdexcept>
+#include <cstddef>
 
 #define uint32 unsigned int
 #define uint64 unsigned long int
@@ -52,16 +54,25 @@ struct i_table{
     uint32 index;
     char name[MAX_STRING_SIZE];
     uint32 first_block;
+    uint32 last_block;
     uint32 records_count;
     uint32 record_size;
     uint16 fields_count;
     uint64 table_size;
 };
 struct field{
+    uint32 index;
     char name[MAX_STRING_SIZE];
     int type;
     int size;
 };
+
+uint32 get_field_padding(struct field f, vector<struct field> fields);
+bool is_int_or_double(char currentSymbol);
+string trim(const string& str, char trim_value);
+vector<struct field>* get_fields(char *block, struct i_table it);
+void from_String_to_int(string s, int *n);
+void from_String_to_double(string s, double *n);
 bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it);
 bool white_spaces(vector<string> *entrance);
 bool validateEntranceLen(vector<string> entrance, unsigned int expected);

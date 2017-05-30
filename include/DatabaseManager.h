@@ -11,6 +11,7 @@ class DatabaseManager
         void use_database(string name);
         void drop_database(string name);
         void create_table(vector<string>);
+        void insert_command(vector<string> entrance);
         void select_command(vector<string> entrance);
         DatabaseManager();
         virtual ~DatabaseManager();
@@ -18,6 +19,10 @@ class DatabaseManager
     protected:
 
     private:
+        void validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char * block, vector<struct field> *fields_ptr);
+        string validate_char_value(string value);
+        int validate_int_value(string value);
+        double validate_double_value(string value);
 };
 
 #endif // DATABASEMANAGER_H

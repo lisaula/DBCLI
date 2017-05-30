@@ -170,7 +170,149 @@ void DatabaseManager::drop_database(string name){
         printMsg("Drop database successfully");
     }
 }
+void DatabaseManager::insert_command(vector<string> entrance){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
+    string table_name = entrance[2];
+    erase_from_vector(&entrance,3);
+    vector<pair<string,string> > fields_value;
+    while(entrance.size()>0){
+        if(!validateEntranceLen(entrance,3)){
+            printMsg("Expected: <COLUMN_NAME> = <VALUE>");
+            return;
+        }
+        pair<string,string> p(entrance[0], entrance[2]);
+        fields_value.push_back(p);
+        erase_from_vector(&entrance,3);
+    }
+    struct i_table it;
+    if(!find_i_table(dbh,table_name, &it)){
+        printMsg("Couldn't find table "+table_name);
+        return;
+    }
 
+    char block[BLOCK_SIZE];
+    read_block(dbh,block,it.first_block);
+    vector<struct field> *fields = get_fields(block,it);
+    if(fields == NULL)
+        throw std::invalid_argument("Error while reading fields in table "+table_name);
+
+    char block_field[it.record_size];
+    memset(block_field,0,it.record_size);
+    validate_fields(fields_value,(*fields),block_field,fields);
+    char n[20], s[2];
+    int number =0;
+    cout<<"aqui"<<endl;
+    memcpy(n,&block_field[1],20);
+    memcpy((void*)&number,&block_field[21],4);
+    memcpy(s,&block_field[25],1);
+    s[1] = (char)NULL;
+    cout<<n<<endl;
+    cout<<number<<endl;
+    cout<<s<<endl;
+    //(*values)[i].first<<" - "<<
+    /*for(int i =0; i<values->size();i++){
+        cout<<(*values)[i].second<<endl;
+        cout<<(*values)[i].first<<endl;
+    }*/
+
+}
+
+void DatabaseManager::validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char* block, vector<struct field> *fields_ptr){
+    uint32 i=0;
+    bool found = false;
+    for(; i<fields_value.size();found?i=0:i++){
+        for(uint32 x=0; x<fields.size();found?x=0:x++){
+            cout<<"comparando |"<<fields_value[i].first<<"|"<<fields[x].name<<"|"<<endl;
+            if(strcmp(fields_value[i].first.c_str(), fields[x].name)==0){
+                if(fields[x].type == CHAR_T){
+                    string char_value =validate_char_value(fields_value[i].second);
+                    if(char_value.size() > fields[x].size){
+                        throw std::invalid_argument("Error char value \""+char_value+"\"exceed its size");
+                    }
+                    cout<<"guardo en: "<<get_field_padding(fields[x], (*fields_ptr))<<endl;
+                    memcpy(&block[get_field_padding(fields[x], (*fields_ptr))],char_value.c_str(),char_value.size());
+                }else if(fields[x].type == INT_T){
+                    int n = validate_int_value(fields_value[i].second);
+                    cout<<"guardo en: "<<get_field_padding(fields[x], (*fields_ptr))<<endl;
+                    memcpy(&block[get_field_padding(fields[x], (*fields_ptr))],(void*)&n,fields[x].size);
+                }else if(fields[x].type == DOUBLE_T){
+                    double d = validate_double_value(fields_value[i].second);
+                    cout<<"guardo en: "<<get_field_padding(fields[x], (*fields_ptr))<<endl;
+                    memcpy(&block[get_field_padding(fields[x], (*fields_ptr))],(void*)&d,fields[x].size);
+                }
+                cout<<"init"<<endl;
+                for(uint32 i =0; i<fields.size();i++){
+                    cout<<fields[i].name<<endl;
+                }
+                fields.erase(fields.begin()+x);
+                cout<<"after"<<endl;
+                for(uint32 i =0; i<fields.size();i++){
+                    cout<<fields[i].name<<endl;
+                }
+                cout<<"middle"<<endl;
+                for(uint32 i =0; i<fields_value.size();i++){
+                    cout<<fields_value[i].first<<endl;
+                }
+                fields_value.erase(fields_value.begin()+i);
+                cout<<"after2"<<endl;
+                for(uint32 i =0; i<fields_value.size();i++){
+                    cout<<fields_value[i].first<<endl;
+                }
+                found = true;
+                //x=0;i=0;
+            }
+            cout<<"itero "<<x<<" "<<fields.size()<<endl;
+        }
+        cout<<"itero out "<<i<<" "<<fields_value.size()<<endl;
+    }
+    if(fields_value.size()>0){
+        for(uint32 i =0; i<fields_value.size();i++){
+            cout<<fields_value.size()<<endl;
+            throw std::invalid_argument("Error100: could not find column "+fields_value[i].first);
+        }
+    }
+    if(fields.size() != 0){
+        for(uint32 i =0; i<fields.size();i++){
+            string s = "";
+            s += fields[i].name;
+            throw std::invalid_argument("Error1001: column "+s+" should not be null");
+        }
+    }
+}
+int DatabaseManager::validate_int_value(string value){
+    for(uint32 i = 0; i< value.size();i++){
+        if(!is_int_or_double(value[i]))
+            throw std::invalid_argument("Error: not a int value: "+value);
+    }
+    int n = 0;
+    from_String_to_int(value,&n);
+    return n;
+}
+
+double DatabaseManager::validate_double_value(string value){
+    for(uint32 i = 0; i< value.size();i++){
+        if(!is_int_or_double(value[i]))
+            throw std::invalid_argument("Error: not a double value: "+value);
+    }
+    double d=0;
+    from_String_to_double(value,&d);
+    return d;
+}
+string DatabaseManager::validate_char_value(string value){
+    int count_double_quotes;
+    for(uint32 i =0; i< value.size();i++){
+        if(value[i] == '"')
+            count_double_quotes++;
+    }
+    if(count_double_quotes<2)
+        throw std::invalid_argument("Error: not a char value: "+value);
+
+    string char_value = trim(value,'"');
+    return char_value;
+}
 void DatabaseManager::create_table(vector<string>entrance){
     if(use == ""){
         printMsg("No database has been specified to use.");
@@ -201,6 +343,7 @@ void DatabaseManager::create_table(vector<string>entrance){
     erase_from_vector(&entrance, 3);
 
     vector<struct field> fields;
+    uint32 index = 0;
     while(entrance.size()>0){
         if(white_spaces(&entrance))
             continue;
@@ -222,7 +365,9 @@ void DatabaseManager::create_table(vector<string>entrance){
         f.size = get_type_len(&entrance);
         if(f.size<0)
             return;
+        f.index = index;
         fields.push_back(f);
+        index++;
         //cout<<"size "<<f.size<<endl;
         it.record_size +=f.size;
     }
@@ -241,8 +386,9 @@ void DatabaseManager::create_table(vector<string>entrance){
     setBlock_use(dbh.blocks_bitmap,n_block);
 
     it.first_block = n_block;
+    it.last_block = n_block;
     it.records_count =0;
-    it.table_size =0;
+    it.table_size =(it.fields_count*FIELD_SIZE);
     char block[BLOCK_SIZE];
     memset(block,0, BLOCK_SIZE);
     uint32 ptr_next_block = -1;

@@ -24,8 +24,7 @@ void CLI::init(){
         vector<string> entrance;
         try {
             entrance = lexer->build_vector();
-        }
-            catch (const std::invalid_argument& ia) {
+        }catch (const std::invalid_argument& ia) {
             std::cerr << "Invalid format: " << ia.what() << '\n';
             continue;
         }
@@ -68,7 +67,16 @@ void CLI::init(){
             }
         }
         else if(entrance[0] == "INSERT"){
-            printMsg("Insert command.");
+            if(!validateEntranceLen(entrance,3)){
+                continue;
+            }
+            try{
+                dbm->insert_command(entrance);
+
+            }catch (const std::invalid_argument& ia) {
+                std::cerr << "Invalid format: " << ia.what() << '\n';
+                continue;
+            }
         }
         else if(entrance[0] == "UPDATE"){
             printMsg("Update command.");

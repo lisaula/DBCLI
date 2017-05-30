@@ -65,7 +65,7 @@ vector<string> Lexer::build_vector(){
             do{
                 lexema += currentSymbol;
                 currentSymbol = get_next_character();
-            }while(is_digit(currentSymbol));
+            }while(is_digit(currentSymbol)|| currentSymbol == '.');
             input_vector.push_back(lexema);
             continue;
         }

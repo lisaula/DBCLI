@@ -12,6 +12,16 @@ int main()
 {
     cout << "..............Welcome..............\n" << endl;
     CLI * cli = new CLI();
+    /*char n[10] = "mama";
+    char block[20];
+    memset(block,0,20);
+    block[0] = 'a';
+    memcpy(&block[1],n,4);
+    char n2[10];
+    memcpy(n2,&block[1],4);
+    n2[4] = (char)NULL;
+    cout<<n2<<endl;
+    cout<<block<<endl;*/
     /*vector<struct field> fields;
 
     struct field f1,f2,f3;

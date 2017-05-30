@@ -17,11 +17,55 @@ uint64 from_MB_bytes_convertion(uint32 n, int type){
     return 0;
 }
 
+uint32 get_field_padding(struct field f, vector<struct field> fields){
+    uint32 padding = 1;
+    for(uint32 i = 0; i< fields.size();i++){
+        if(f.index == fields[i].index)
+            return padding;
+        padding += fields[i].size;
+    }
+    return padding;
+}
+
+vector<struct field>* get_fields(char *block, struct i_table it){
+    vector<struct field> *fields = new vector<struct field>();
+    int fields_count =0;
+    while (fields_count < it.fields_count){
+        struct field f;
+        uint32 pos = BLOCK_PTR_SIZE+(fields_count*FIELD_SIZE);
+        if(pos < BLOCK_SIZE){
+            memcpy((char*)&f,&block[pos],FIELD_SIZE);
+            fields->push_back(f);
+            fields_count++;
+        }else{
+            printMsg("block finished");
+            return NULL;
+        }
+    }
+    return fields;
+}
+
+string trim(const string& str, char trim_value)
+{
+    size_t first = str.find_first_not_of(trim_value);
+    if (string::npos == first)
+    {
+        return str;
+    }
+    size_t last = str.find_last_not_of(trim_value);
+    return str.substr(first, (last - first + 1));
+}
 
 void from_String_to_uint(string s, uint32 *n){
     stringstream(s)>>(*n);
 }
 
+void from_String_to_double(string s, double *n){
+    stringstream(s)>>(*n);
+}
+void from_String_to_int(string s, int *n){
+    stringstream(s)>>(*n);
+}
 void read_itable(struct Database_Handler dbh, struct i_table *it, uint32 n_itable){
     string database_path = PATH+dbh.sb.name;
     database_path += ".dat";
@@ -132,6 +176,13 @@ void erase_from_vector(vector<string>* vector_, int count){
     for(int i =0; i< count; i++){
         vector_->erase(vector_->begin());
     }
+}
+
+bool is_int_or_double(char currentSymbol){
+    if( ((int)currentSymbol >= 48 && (int)currentSymbol <=57) || currentSymbol == '.' ){
+        return true;
+    }
+    return false;
 }
 
 int get_type(string s){

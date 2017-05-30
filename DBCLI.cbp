@@ -36,11 +36,13 @@
 		</Compiler>
 		<Unit filename="include/CLI.h" />
 		<Unit filename="include/DatabaseManager.h" />
+		<Unit filename="include/Lexer.h" />
 		<Unit filename="include/TYPE.h" />
 		<Unit filename="include/Utils.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="src/CLI.cpp" />
 		<Unit filename="src/DatabaseManager.cpp" />
+		<Unit filename="src/Lexer.cpp" />
 		<Unit filename="src/Utils.cpp" />
 		<Extensions>
 			<code_completion />
