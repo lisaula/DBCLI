@@ -49,6 +49,7 @@ struct Database_Handler{
 };
 
 struct i_table{
+    uint32 index;
     char name[MAX_STRING_SIZE];
     uint32 first_block;
     uint32 records_count;
@@ -61,7 +62,8 @@ struct field{
     int type;
     int size;
 };
-
+bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it);
+bool white_spaces(vector<string> *entrance);
 bool validateEntranceLen(vector<string> entrance, unsigned int expected);
 void write_SB(struct Database_Handler dbh);
 void write_bitmap(string database_name,char * bitmap,uint32 size, uint64 ptr_bitmap);
@@ -71,6 +73,7 @@ void erase_from_vector(vector<string>* vector_, int count);
 void read_itable(struct Database_Handler dbh, struct i_table *it, uint32 n_itable);
 void write_itable(struct Database_Handler dbh, struct i_table it, uint32 n_itable);
 void write_block(struct Database_Handler dbh, char *block, uint32 n_block);
+void read_block(struct Database_Handler dbh, char *block, uint32 n_block);
 uint64 from_GB_bytes_convertion(uint32 n, int type);
 uint64 from_MB_bytes_convertion(uint32 n, int type);
 void printMsg(string msg);

@@ -67,7 +67,7 @@ void CLI::init(){
             printMsg("Delete command.");
         }
         else if(entrance[0] == "SELECT"){
-            printMsg("Select command.");
+            dbm->select_command(entrance);
         }
         else if(entrance[0] == "EXIT"){
             exit = true;

@@ -64,6 +64,31 @@ void read_block(struct Database_Handler dbh, char *block, uint32 n_block){
     in.close();
 }
 
+bool white_spaces(vector<string> *entrance){
+    if((*entrance)[0] == "\r" || (*entrance)[0] == "\n" || (*entrance)[0] == "\t"
+    || (*entrance)[0] == " " || (*entrance)[0] == ""){
+        erase_from_vector(entrance,1);
+        return true;
+    }
+    return false;
+}
+
+bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it){
+    uint32 i_tables_actives = dbh.sb.itables_count - dbh.sb.free_itables_count;
+    uint32 checked = 0;
+    while(checked < i_tables_actives){
+        for(uint32 i =0; i < dbh.sb.itables_count; i++){
+            read_itable(dbh,it,i);
+            if(strcmp(it->name,name.c_str())==0){
+                return true;
+            }
+            if(it->first_block != (uint32)-1)
+                checked++;
+        }
+    }
+    return false;
+}
+
 void write_block(struct Database_Handler dbh, char *block, uint32 n_block){
     string database_path = PATH+dbh.sb.name;
     database_path += ".dat";

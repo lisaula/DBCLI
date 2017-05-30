@@ -98,9 +98,12 @@ void DatabaseManager::create_database(string name, UINT32 database_size){
     output_file.write(block, BLOCK_SIZE);
     output_file.close();
     printMsg("Create database successfully");
+    cout<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
+    cout<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
     cout<<"database size: "<<dbh.sb.database_size<<endl;
     cout<<"blocks count: "<<dbh.sb.blocks_count<<endl;
     cout<<"free blocks count: "<<dbh.sb.free_blocks_count<<endl;
+    cout<<"free itables count: "<<dbh.sb.free_itables_count<<endl;
     cout<<"itables count: "<<dbh.sb.itables_count<<endl;
     cout<<"DataBase metadata size: "<<dbh.sb.FD_size<<endl;
     cout<<"itable bitmap pointer: "<<dbh.sb.ptr_itable_bipmap<<endl;
@@ -145,10 +148,13 @@ void DatabaseManager::use_database(string name){
 
     in.close();
     printMsg("Database loaded successfully");
+    cout<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
+    cout<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
     cout<<"database size: "<<dbh.sb.database_size<<endl;
     cout<<"blocks count: "<<dbh.sb.blocks_count<<endl;
     cout<<"free blocks count: "<<dbh.sb.free_blocks_count<<endl;
     cout<<"itables count: "<<dbh.sb.itables_count<<endl;
+    cout<<"free itables count: "<<dbh.sb.free_itables_count<<endl;
     cout<<"DataBase metadata size: "<<dbh.sb.FD_size<<endl;
     cout<<"itable bitmap pointer: "<<dbh.sb.ptr_itable_bipmap<<endl;
     cout<<"blocks bitmap pointer: "<<dbh.sb.ptr_blocks_bitmap<<endl;
@@ -175,16 +181,13 @@ void DatabaseManager::create_table(vector<string>entrance){
         return;
     }
 
-    for(uint32 i =0; i<entrance.size();i++){
-        cout<<entrance[i]<<endl;
-    }
-
     if(dbh.sb.free_itables_count ==0 ){
         printMsg("Error: no free itable.");
         return;
     }
 
-    uint32 n_itable = next_available(dbh.itable_bitmap, dbh.itable_bitmap_size);
+    uint32 n_itable = next_available(dbh.itable_bitmap, dbh.sb.itables_count);
+    cout<<"next itable available :"<<n_itable<<endl;
     if(n_itable == (unsigned int)-1){
         printMsg("Not enough i_tables available");
         return;
@@ -193,12 +196,15 @@ void DatabaseManager::create_table(vector<string>entrance){
     struct i_table it;
     memset(it.name,0,MAX_STRING_SIZE);
     it.record_size =0;
-
+    it.index = n_itable;
     strcpy(it.name,entrance[2].c_str());
     erase_from_vector(&entrance, 3);
 
     vector<struct field> fields;
     while(entrance.size()>0){
+        if(white_spaces(&entrance))
+            continue;
+
         struct field f;
         if(strlen(entrance[0].c_str())>MAX_STRING_SIZE){
             printMsg("Name of column "+entrance[0]+" is too long");
@@ -217,14 +223,17 @@ void DatabaseManager::create_table(vector<string>entrance){
         if(f.size<0)
             return;
         fields.push_back(f);
-        it.record_size =f.size;
+        cout<<"size "<<f.size<<endl;
+        it.record_size +=f.size;
     }
+    it.record_size+=1;//byte de borrado;
     it.fields_count = fields.size();
     if(dbh.sb.free_blocks_count ==0 ){
         printMsg("Error: no free itable.");
         return;
     }
     uint32 n_block = next_available(dbh.blocks_bitmap,dbh.sb.blocks_count);
+    cout<<"next block available :"<<n_block<<endl;
     if(n_block == (unsigned int)-1){
         printMsg("Not enough blocks available");
         return;
@@ -240,9 +249,15 @@ void DatabaseManager::create_table(vector<string>entrance){
     memcpy(block,(void*)&ptr_next_block,BLOCK_PTR_SIZE);
 
     struct field *fields_array = &fields[0];
-    memcpy((void*)&block[BLOCK_PTR_SIZE],(void*)fields_array,FIELD_SIZE*it.fields_count);
+    memcpy(&block[BLOCK_PTR_SIZE],(void*)fields_array,FIELD_SIZE*it.fields_count);
 
+    for(uint32 i = 0; i< fields.size(); i++){
+        cout<<fields_array[i].name<<endl;
+        cout<<fields_array[i].type<<endl;
+        cout<<fields_array[i].size<<endl;
+    }
     //WRITING PROCESS
+
     write_block(dbh,block,n_block);
     write_itable(dbh,it,n_itable);
     if(dbh.sb.free_blocks_count>0)
@@ -254,6 +269,56 @@ void DatabaseManager::create_table(vector<string>entrance){
     write_bitmap(use,dbh.blocks_bitmap,dbh.blocks_bitmap_size,dbh.sb.ptr_blocks_bitmap);
     write_bitmap(use,dbh.itable_bitmap,dbh.itable_bitmap_size,dbh.sb.ptr_itable_bipmap);
     printMsg("Create table successfully");
+}
+
+void DatabaseManager::select_command(vector<string> entrance){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
+    uint32 count = 1;
+    vector<string> p_fields;
+    while(entrance.size() > count && entrance[count] != "FROM"){
+        if(white_spaces(&entrance))
+            continue;
+        p_fields.push_back(entrance[count++]);
+    }
+    count++;
+    erase_from_vector(&entrance,count);
+
+    if(!validateEntranceLen(entrance,1))
+        return;
+    string table_name = entrance[0];
+    struct i_table it;
+    if(!find_i_table(dbh,table_name, &it)){
+        printMsg("Couldn't find table "+table_name);
+        return;
+    }
+
+    char block[BLOCK_SIZE];
+    read_block(dbh,block,it.first_block);
+    vector<struct field> fields;
+    int fields_count =0;
+    while (fields_count < it.fields_count){
+        struct field f;
+        uint32 pos = BLOCK_PTR_SIZE+(fields_count*FIELD_SIZE);
+        if(pos < BLOCK_SIZE){
+            memcpy((char*)&f,&block[pos],FIELD_SIZE);
+            fields.push_back(f);
+            fields_count++;
+        }else{
+            printMsg("block finished");
+            break;
+        }
+    }
+    for(uint32 i = 0; i< fields.size(); i++){
+        cout<<fields[i].name<<endl;
+        cout<<fields[i].type<<endl;
+        cout<<fields[i].size<<endl;
+    }
+
+    cout<<it.record_size<<endl;
+
 }
 
 

@@ -11,6 +11,7 @@ class DatabaseManager
         void use_database(string name);
         void drop_database(string name);
         void create_table(vector<string>);
+        void select_command(vector<string> entrance);
         DatabaseManager();
         virtual ~DatabaseManager();
 
