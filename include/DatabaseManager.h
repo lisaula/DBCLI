@@ -21,6 +21,7 @@ class DatabaseManager
     protected:
 
     private:
+        string print_on_column(string s,void* value,uint32 size,int pad, Type t, bool end_line);
         void validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char * block);
         string validate_char_value(string value);
         int validate_int_value(string value);

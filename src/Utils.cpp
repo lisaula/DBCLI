@@ -133,6 +133,18 @@ bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it){
     }
     return false;
 }
+vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it){
+    vector<char*> * blocks = new vector<char*>();
+    uint32 ptr  = it.first_block;
+    do{
+        char *block = new char[BLOCK_SIZE];
+        read_block(dbh,block,ptr);
+        blocks->push_back(block);
+        memcpy((void*)&ptr,block,BLOCK_PTR_SIZE);
+        cout<<"leyo"<<endl;
+    }while(ptr != (uint32)-1 );
+    return blocks;
+}
 
 void write_block(struct Database_Handler dbh, char *block, uint32 n_block){
     string database_path = PATH+dbh.sb.name;
@@ -147,7 +159,19 @@ void write_block(struct Database_Handler dbh, char *block, uint32 n_block){
     output_file.write(block,BLOCK_SIZE);
     output_file.close();
 }
+string from_int_to_string(int number){
+    std::stringstream ss;
+    ss << number;
+    std::string numberAsString(ss.str());
+    return numberAsString;
+}
 
+string from_double_to_string(double number){
+    std::stringstream ss;
+    ss << number;
+    std::string numberAsString(ss.str());
+    return numberAsString;
+}
 void write_SB(struct Database_Handler dbh){
     string database_path = PATH+dbh.sb.name;
     database_path += ".dat";

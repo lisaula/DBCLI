@@ -117,6 +117,8 @@ void DatabaseManager::print_database_info(){
     cout<<"free itables count: "<<dbh.sb.free_itables_count<<endl;
     cout<<"itable bitmap pointer: "<<dbh.sb.ptr_itable_bipmap<<endl;
     cout<<"blocks bitmap pointer: "<<dbh.sb.ptr_blocks_bitmap<<endl;
+    cout<<"next free block: "<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
+    cout<<"next free itable: "<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
 }
 
 void DatabaseManager::use_database(string name){
@@ -204,13 +206,15 @@ void DatabaseManager::insert_command(vector<string> entrance){
     char block_field[it.record_size];
     memset(block_field,0,it.record_size);
     validate_fields(fields_value,(*fields),block_field);
-    uint32 free_space = it.table_size % BLOCK_SIZE;
+
+    uint32 used_space = (it.table_size % BLOCK_SIZE);
+    uint32 free_space = BLOCK_SIZE - used_space;
     if(it.record_size <= free_space){
         char new_block[BLOCK_SIZE];
         memset(new_block,0,BLOCK_SIZE);
         read_block(dbh,new_block,it.last_block);
-        uint32 pos = BLOCK_SIZE - free_space;
-        memcpy(&new_block[pos],block_field,it.record_size);
+        //cout<<"guardo pos: "<<used_space<<" en: "<<it.last_block<<" fs: "<<free_space<<endl;
+        memcpy(&new_block[used_space],block_field,it.record_size);
         write_block(dbh,new_block,it.last_block);
     }else{
         char new_block[BLOCK_SIZE];
@@ -258,6 +262,7 @@ void DatabaseManager::validate_fields(vector<pair<string,string> > fields_value,
                     if(char_value.size() > fields[x].size){
                         throw std::invalid_argument("Error char value \""+char_value+"\" exceed its size");
                     }
+                    //cout<<"pading "<<get_field_padding(fields[x], fields)<<" val: "<<char_value.c_str()<<endl;
                     memcpy(&block[get_field_padding(fields[x], fields)],char_value.c_str(),char_value.size());
                 }else if(fields[x].type == INT_T){
                     int n = validate_int_value(fields_value[i].second);
@@ -297,7 +302,7 @@ void DatabaseManager::validate_fields(vector<pair<string,string> > fields_value,
     }
     if(not_founds.size()>0){
         for(uint32 i =0; i<not_founds.size();i++){
-            cout<<not_founds.size()<<endl;
+            //cout<<not_founds.size()<<endl;
             throw std::invalid_argument("Error100: could not find column "+not_founds[i].first);
         }
     }
@@ -425,7 +430,7 @@ void DatabaseManager::create_table(vector<string>entrance){
     it.first_block = n_block;
     it.last_block = n_block;
     it.records_count =0;
-    it.table_size =(it.fields_count*FIELD_SIZE);
+    it.table_size =(it.fields_count*FIELD_SIZE) +BLOCK_PTR_SIZE;
 
     //updating database free space
     dbh.sb.free_database_space -= it.table_size;
@@ -524,6 +529,9 @@ void DatabaseManager::select_command(vector<string> entrance){
         return;
     }
 
+    /*vector<char*> *blocks = read_all_table(dbh,it);
+    char ** ptr_blocks = &(*blocks)[0];
+    char *block = ptr_blocks[0];*/
     char block[BLOCK_SIZE];
     read_block(dbh,block,it.first_block);
     vector<struct field> fields;
@@ -540,15 +548,87 @@ void DatabaseManager::select_command(vector<string> entrance){
             break;
         }
     }
-    for(uint32 i = 0; i< fields.size(); i++){
-        cout<<fields[i].name<<endl;
-        cout<<fields[i].type<<endl;
-        cout<<fields[i].size<<endl;
+    cout<<"   ";
+    vector<int> pad;
+    int count_pad = 1, l_p_c =0;
+    for(uint32 i =0; i< fields.size();i++){
+        cout<<fields[i].name<<"          ";
+        string s = "";
+        int p_c = 0;
+        for(uint32 p = strlen(fields[i].name)+12; p<fields[i].size;p++ ){
+            cout<<" ";
+            p_c++;
+        }
+        if(i!=0){
+            //cout<<"lpc "<<l_p_c<<endl;
+            count_pad += strlen(fields[i-1].name)+(12+l_p_c);
+        }
+        l_p_c = p_c;
+        pad.push_back(count_pad);
     }
+    cout<<endl;
+    uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
+    /*char block_field[it.record_size];
+    memcpy(block_field, &block[first_pos],it.record_size);
+    char nombre[21];
+    memcpy(nombre,&block_field[get_field_padding(fields[0], fields)],20);
+    nombre[20] = (char)NULL;
+    */
 
-    cout<<it.record_size<<endl;
-    cout<<it.records_count<<endl;
-    cout<<"index "<<it.index<<endl;
+    uint32 records_count =0, blocks_count =1;
+    while(records_count < it.records_count){
+        char block_field[it.record_size];
+        uint32 space_available = (blocks_count*BLOCK_SIZE)-first_pos;
+        if(it.record_size <= space_available){
+            uint32 pos = BLOCK_SIZE - space_available;
+            //cout<<"record pos: "<<pos<<endl;
+            memcpy(block_field,&block[first_pos],it.record_size);
+            string s = "   ";
+            for(int i = 0; i< fields.size(); i++){
+                char *value = &block_field[get_field_padding(fields[i],fields)];
+                s = print_on_column(s,value,fields[i].size,pad[i],(Type)fields[i].type,(i == fields.size()-1));
+                //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
+            }
+            cout<<s;
+            records_count++;
+            first_pos += it.record_size;
+        }
+    }
+}
+
+string DatabaseManager::print_on_column(string s,void* value,uint32 size, int pad, Type t, bool end_line){
+    switch(t){
+        case INT_T:
+                {
+                int *n = (int*)value;
+                while(s.size() < pad ){
+                    s+=" ";
+                }
+                s += from_int_to_string(*n);
+                break;
+            }
+        case CHAR_T:{
+            char v [size+1];
+            memcpy(v,value,size);
+            v[size] = (char)NULL;
+            while(s.size() < pad ){
+                    s+=" ";
+            }
+            s += v;
+            break;
+        }
+        case DOUBLE_T:{
+            double *n = (double*)value;
+            while(s.size() < pad ){
+                s+=" ";
+            }
+            s += from_double_to_string(*n);;
+            break;
+        }
+    }
+    if(end_line)
+        s+="\n";
+    return s;
 }
 
 

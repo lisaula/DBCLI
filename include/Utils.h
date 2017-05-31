@@ -12,6 +12,7 @@
 #include "TYPE.h"
 #include <stdexcept>
 #include <cstddef>
+#include <stdio.h>
 
 #define uint32 unsigned int
 #define uint64 unsigned long int
@@ -68,6 +69,9 @@ struct field{
     int size;
 };
 
+vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it);
+string from_int_to_string(int n);
+string from_double_to_string(double n);
 uint32 get_field_padding(struct field f, vector<struct field> fields);
 bool is_int_or_double(char currentSymbol);
 string trim(const string& str, char trim_value);
