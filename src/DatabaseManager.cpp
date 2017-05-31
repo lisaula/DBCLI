@@ -623,6 +623,79 @@ void DatabaseManager::delete_command(vector<string> entrance){
         return;
     string table_name = entrance[1];
     erase_from_vector(&entrance,2);
+
+    struct i_table it;
+    if(!find_i_table(dbh,table_name, &it)){
+        printMsg("Couldn't find table "+table_name);
+        return;
+    }
+
+    char block[BLOCK_SIZE];
+    read_block(dbh,block,it.first_block);
+    vector<struct field> fields;
+    int fields_count =0;
+    while (fields_count < it.fields_count){
+        struct field f;
+        uint32 pos = BLOCK_PTR_SIZE+(fields_count*FIELD_SIZE);
+        if(pos < BLOCK_SIZE){
+            memcpy((char*)&f,&block[pos],FIELD_SIZE);
+            fields.push_back(f);
+            fields_count++;
+        }else{
+            printMsg("block finished");
+            break;
+        }
+    }
+
+    //GETTING WHERE
+    pair<int,string> p;
+    bool is_where = get_where_statement(entrance, &p, fields);
+
+    uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
+    uint32 records_count =0;
+    while(records_count < it.records_count){
+        char block_field[it.record_size];
+        uint32 space_available = BLOCK_SIZE-first_pos;
+        if(it.record_size <= space_available){
+            memcpy(block_field,&block[first_pos],it.record_size);
+            records_count++;
+            first_pos += it.record_size;
+        }else{
+            memcpy(block_field,&block[first_pos],space_available);
+            uint32 ptr_next_block=0;
+            memcpy(&ptr_next_block,block,BLOCK_PTR_SIZE);
+            read_block(dbh,block,ptr_next_block);
+            first_pos = BLOCK_PTR_SIZE;
+            uint32 difference = it.record_size - space_available;
+            memcpy(&block_field[space_available],&block[first_pos],difference);
+            records_count++;
+            first_pos += difference;
+        }
+        byte b = block_field[0];
+        if(b ==1 )
+            continue;
+        if(is_where){
+            bool pass = pass_where(block_field,p,fields);
+            if(!pass)
+                continue;
+            memset(block_field,1,1);
+        }else{
+            memset(block_field,1,1);
+        }
+
+        write_record(dbh,it, block_field,records_count-1);
+        /*string s = "   ";
+        for(int i = 0; i< p_fields.size(); i++){
+            int pos = p_field_is_contained(p_fields[i],fields);
+            struct field f = fields[pos];
+            //cout<<"pading "<<get_field_padding(f,fields)<<" of "<<p_fields[i]<<endl;
+            char *value = &block_field[get_field_padding(f,fields)];
+            s = print_on_column(s,value,fields[pos].size,pad[i],(Type)fields[pos].type,(i == p_fields.size()-1));
+            //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
+        }
+        cout<<s;*/
+    }
+    printMsg("Deleted successfully");
 }
 
 void DatabaseManager::update_command(vector<string> entrance){
@@ -685,7 +758,6 @@ void DatabaseManager::update_command(vector<string> entrance){
     //print_table_header(&p_fields,fields,&pad);
 
     uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
-    uint32 initial_pos = first_pos;
     uint32 records_count =0;
     while(records_count < it.records_count){
         char block_field[it.record_size];
