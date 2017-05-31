@@ -98,7 +98,13 @@ void CLI::init(){
             printMsg("Delete command.");
         }
         else if(entrance[0] == "SELECT"){
-            dbm->select_command(entrance);
+            try{
+             dbm->select_command(entrance);
+
+            }catch (const std::invalid_argument& ia) {
+                std::cerr << ia.what() << '\n';
+                continue;
+            }
         }
         else if(entrance[0] == "EXIT"){
             exit = true;

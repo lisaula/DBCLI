@@ -26,7 +26,7 @@
 	"DatabaseManager.h"
 	"Lexer.h"
 
-1496239248 g:\2017\2do tri\tdb2\cli_db\include\utils.h
+1496227309 g:\2017\2do tri\tdb2\cli_db\include\utils.h
 	<fstream>
 	<iostream>
 	<string.h>
@@ -39,17 +39,17 @@
 	<cstddef>
 	<stdio.h>
 
-1496235053 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
+1496231349 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
 	<windows.h>
 	"Utils.h"
 
-1496230695 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
+1496229904 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
 	"CLI.h"
 
-1496222382 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
+1496231522 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
 	"DatabaseManager.h"
 
-1496239321 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
+1496227321 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
 	"Utils.h"
 
 1496080442 g:\2017\2do tri\tdb2\cli_db\include\type.h

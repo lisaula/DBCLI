@@ -159,6 +159,15 @@ void write_block(struct Database_Handler dbh, char *block, uint32 n_block){
     output_file.write(block,BLOCK_SIZE);
     output_file.close();
 }
+
+int p_field_is_contained(string p_field, vector<struct field> fields){
+    for(uint32 i =0; i < fields.size(); i++){
+        if(strcmp(p_field.c_str(),fields[i].name) == 0)
+            return i;
+    }
+    return -1;
+}
+
 string from_int_to_string(int number){
     std::stringstream ss;
     ss << number;

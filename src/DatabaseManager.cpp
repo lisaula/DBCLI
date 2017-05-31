@@ -504,6 +504,21 @@ void DatabaseManager::print_table_info(string table_name){
     }
 }
 
+bool DatabaseManager::get_where_statement(vector<string> entrance, pair<int, string>* p, vector<struct field> fields){
+    if(entrance.size() == 0)
+        return false;
+    erase_from_vector(&entrance,1);
+    if(!validateEntranceLen(entrance,3)){
+        throw std::invalid_argument("Error300: In where statement. Expected <COLUMN_NAME> = <VALUE>");
+    }
+    int n = p_field_is_contained(entrance[0],fields);
+    if(n<0){
+        throw std::invalid_argument("Error300: In where statement. Column "+entrance[0]+" not found.");
+    }
+    p->first = n;
+    p->second = entrance[2];
+    return true;
+}
 void DatabaseManager::select_command(vector<string> entrance){
     if(use == ""){
         printMsg("No database has been specified to use.");
@@ -516,12 +531,12 @@ void DatabaseManager::select_command(vector<string> entrance){
             continue;
         p_fields.push_back(entrance[count++]);
     }
-    count++;
     erase_from_vector(&entrance,count);
-
-    if(!validateEntranceLen(entrance,1))
+    if(!validateEntranceLen(entrance,2))
         return;
-    string table_name = entrance[0];
+    string table_name = entrance[1];
+    erase_from_vector(&entrance,2);
+
     struct i_table it;
     if(!find_i_table(dbh,table_name, &it)){
         printMsg("Couldn't find table "+table_name);
@@ -547,32 +562,14 @@ void DatabaseManager::select_command(vector<string> entrance){
             break;
         }
     }
-    cout<<"   ";
-    vector<int> pad;
-    int count_pad = 3, l_p_c =0;
-    for(uint32 i =0; i< fields.size();i++){
-        cout<<fields[i].name<<"          ";
-        int p_c = 0;
-        for(uint32 p = strlen(fields[i].name)+10; p<fields[i].size;p++ ){
-            cout<<" ";
-            p_c++;
-        }
-        if(i!=0){
-            //cout<<"lpc "<<l_p_c<<endl;
-            count_pad += strlen(fields[i-1].name)+(10+l_p_c);
-        }
-        l_p_c = p_c;
-        pad.push_back(count_pad);
-    }
-    cout<<endl;
-    uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
-    /*char block_field[it.record_size];
-    memcpy(block_field, &block[first_pos],it.record_size);
-    char nombre[21];
-    memcpy(nombre,&block_field[get_field_padding(fields[0], fields)],20);
-    nombre[20] = (char)NULL;
-    */
 
+    //GETTING WHERE
+    pair<int,string> p;
+    bool is_where = get_where_statement(entrance, &p, fields);
+
+    vector<int> pad;
+    print_table_header(&p_fields,fields,&pad);
+    uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
     uint32 records_count =0, blocks_count =1;
     while(records_count < it.records_count){
         char block_field[it.record_size];
@@ -592,13 +589,109 @@ void DatabaseManager::select_command(vector<string> entrance){
             records_count++;
             first_pos += difference;
         }
+        byte b = block_field[0];
+        if(b ==1 )
+            continue;
+        if(is_where){
+            bool pass = pass_where(block_field,p,fields);
+            if(!pass)
+                continue;
+        }
+
         string s = "   ";
-        for(int i = 0; i< fields.size(); i++){
-            char *value = &block_field[get_field_padding(fields[i],fields)];
-            s = print_on_column(s,value,fields[i].size,pad[i],(Type)fields[i].type,(i == fields.size()-1));
+        for(int i = 0; i< p_fields.size(); i++){
+            int pos = p_field_is_contained(p_fields[i],fields);
+            struct field f = fields[pos];
+            //cout<<"pading "<<get_field_padding(f,fields)<<" of "<<p_fields[i]<<endl;
+            char *value = &block_field[get_field_padding(f,fields)];
+            s = print_on_column(s,value,fields[pos].size,pad[i],(Type)fields[pos].type,(i == p_fields.size()-1));
             //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
         }
         cout<<s;
+    }
+}
+
+bool DatabaseManager::pass_where(char* block_field, pair<int, string> p, vector<struct field> fields){
+    struct field f = fields[p.first];
+
+    switch (f.type){
+        case INT_T:{
+            int n = validate_int_value(p.second);
+            int n_v =0;
+            memcpy(&n_v,&block_field[get_field_padding(f,fields)],f.size);
+            return n_v == n;
+            break;
+        }
+        case CHAR_T:{
+            string s = validate_char_value(p.second);
+            char value[f.size+1];
+            memcpy(value,&block_field[get_field_padding(f,fields)],f.size);
+            value[f.size]= (char)NULL;
+            return (strcmp( value,s.c_str() ) == 0);
+            break;
+        }
+        case DOUBLE_T:{
+            double d = validate_double_value(p.second);
+            double d_v;
+            memcpy(&d_v,&block_field[get_field_padding(f,fields)],f.size);
+            return d_v == d;
+            break;
+        }
+        }
+    return false;
+}
+
+void DatabaseManager::print_table_header(vector<string> *p_fields, vector<struct field> fields, vector<int>* pad){
+    bool all = false;
+    for(uint32 i = 0; i < p_fields->size() ; i++){
+        if((*p_fields)[i].find("*") != std::string::npos){
+            all = true;
+            break;
+        }
+    }
+    if(all){
+        erase_from_vector(p_fields,p_fields->size());
+        cout<<"   ";
+        int count_pad = 3, l_p_c =0;
+        for(uint32 i =0; i< fields.size();i++){
+            string place_holder = "";
+            place_holder += fields[i].name;
+            p_fields->push_back(place_holder);
+            cout<<fields[i].name<<"          ";
+            int p_c = 0;
+            for(uint32 p = strlen(fields[i].name)+10; p<fields[i].size;p++ ){
+                cout<<" ";
+                p_c++;
+            }
+            if(i!=0){
+                //cout<<"lpc "<<l_p_c<<endl;
+                count_pad += strlen(fields[i-1].name)+(10+l_p_c);
+            }
+            l_p_c = p_c;
+            pad->push_back(count_pad);
+        }
+        cout<<endl;
+    }else{
+        cout<<"   ";
+        int count_pad = 3, l_p_c =0;
+        for(uint32 i =0; i< p_fields->size();i++){
+            int p_i = p_field_is_contained((*p_fields)[i], fields);
+            if( p_i < 0)
+                continue;
+            cout<<fields[p_i].name<<"          ";
+            int p_c = 0;
+            for(uint32 p = strlen(fields[p_i].name)+10; p<fields[p_i].size;p++ ){
+                cout<<" ";
+                p_c++;
+            }
+            if(i!=0){
+                //cout<<"lpc "<<l_p_c<<endl;
+                count_pad += strlen((*p_fields)[i-1].c_str())+(10+l_p_c);
+            }
+            l_p_c = p_c;
+            pad->push_back(count_pad);
+        }
+        cout<<endl;
     }
 }
 

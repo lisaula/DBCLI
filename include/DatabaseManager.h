@@ -21,6 +21,9 @@ class DatabaseManager
     protected:
 
     private:
+        bool get_where_statement(vector<string> entrance, pair<int, string>* p, vector<struct field> fields);
+        bool pass_where(char* block_field, pair<int, string> p, vector<struct field> fields);
+        void print_table_header(vector<string> *p_fields, vector<struct field> fields, vector<int>* pad);
         string print_on_column(string s,void* value,uint32 size,int pad, Type t, bool end_line);
         void validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char * block);
         string validate_char_value(string value);

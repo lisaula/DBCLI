@@ -69,6 +69,7 @@ struct field{
     int size;
 };
 
+int p_field_is_contained(string p_field, vector<struct field> fields);
 vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it);
 string from_int_to_string(int n);
 string from_double_to_string(double n);
