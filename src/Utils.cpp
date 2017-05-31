@@ -124,6 +124,7 @@ bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it){
         for(uint32 i =0; i < dbh.sb.itables_count; i++){
             read_itable(dbh,it,i);
             if(strcmp(it->name,name.c_str())==0){
+                cout<<"index itable f: "<<i<<endl;
                 return true;
             }
             if(it->first_block != (uint32)-1)
@@ -292,7 +293,7 @@ uint32 next_available(char* bitmap, uint32 b_size){
             return i;
         }
     }
-    return -1;
+    throw std::invalid_argument("Error200: Not enough blocks available");
 }
 
 bool is_block_in_use(char* bitmap, uint32 blocknum)

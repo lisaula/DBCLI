@@ -19,7 +19,7 @@ class DatabaseManager
     protected:
 
     private:
-        void validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char * block, vector<struct field> *fields_ptr);
+        void validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char * block);
         string validate_char_value(string value);
         int validate_int_value(string value);
         double validate_double_value(string value);

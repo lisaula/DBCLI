@@ -14,7 +14,7 @@
 	<iterator>
 	<vector>
 
-1496178917 source:g:\2017\2do tri\tdb2\cli_db\main.cpp
+1496215781 source:g:\2017\2do tri\tdb2\cli_db\main.cpp
 	<iostream>
 	<string.h>
 	"CLI.h"
@@ -38,17 +38,17 @@
 	<stdexcept>
 	<cstddef>
 
-1496179290 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
+1496184548 g:\2017\2do tri\tdb2\cli_db\include\databasemanager.h
 	<windows.h>
 	"Utils.h"
 
-1496174228 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
+1496186032 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
 	"CLI.h"
 
-1496179676 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
+1496217406 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
 	"DatabaseManager.h"
 
-1496178081 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
+1496216652 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
 	"Utils.h"
 
 1496080442 g:\2017\2do tri\tdb2\cli_db\include\type.h
@@ -60,6 +60,6 @@
 	<ctype.h>
 	<stdexcept>
 
-1496169627 source:g:\2017\2do tri\tdb2\cli_db\src\lexer.cpp
+1496185875 source:g:\2017\2do tri\tdb2\cli_db\src\lexer.cpp
 	"Lexer.h"
 

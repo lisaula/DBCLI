@@ -12,6 +12,7 @@ int main()
 {
     cout << "..............Welcome..............\n" << endl;
     CLI * cli = new CLI();
+    //cout<<%1024<<endl;
     /*char n[10] = "mama";
     char block[20];
     memset(block,0,20);

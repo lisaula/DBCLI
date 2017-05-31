@@ -74,7 +74,7 @@ void CLI::init(){
                 dbm->insert_command(entrance);
 
             }catch (const std::invalid_argument& ia) {
-                std::cerr << "Invalid format: " << ia.what() << '\n';
+                std::cerr << ia.what() << '\n';
                 continue;
             }
         }

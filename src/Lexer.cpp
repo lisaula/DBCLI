@@ -20,7 +20,7 @@ char Lexer::get_next_character(){
         //cout<<"retorno '"<<c<<"'"<<length<<endl;
         return c;
     }
-    return '$';
+    return '\0';
 }
 
 
@@ -41,7 +41,7 @@ bool Lexer::is_letter(char currentSymbol){
 vector<string> Lexer::build_vector(){
     vector<string> input_vector;
     char currentSymbol = get_next_character();
-    while(currentSymbol != '$'){
+    while(currentSymbol != '\0'){
         while ((int)currentSymbol == 32 || currentSymbol == '\r' || currentSymbol == '\n' || currentSymbol == '\t')
         {
             currentSymbol = get_next_character();
@@ -73,6 +73,8 @@ vector<string> Lexer::build_vector(){
         if(currentSymbol == '"'){
             string lexema = "";
             do{
+                if(currentSymbol == '\0')
+                    throw std::invalid_argument("Error: expected \".");
                 lexema += currentSymbol;
                 currentSymbol = get_next_character();
             }while(currentSymbol != '"');
