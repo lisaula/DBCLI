@@ -55,7 +55,16 @@ void CLI::init(){
         }
         else if(entrance[0] == "DROP"){
             if(validateEntranceLen(entrance, 2) && entrance[1] == "TABLE"){
-                printMsg("Drop table successfully");
+                try{
+                    if(entrance.size() < 3){
+                        printMsg("Not enough arguments.");
+                        continue;
+                    }
+                    dbm->drop_table(entrance[2]);
+                }catch (const std::invalid_argument& ia) {
+                    std::cerr << ia.what() << '\n';
+                    continue;
+                }
             }else if(validateEntranceLen(entrance, 2) && entrance[1] == "DATABASE"){
                 if(entrance.size() < 3){
                     printMsg("Not enough arguments.");

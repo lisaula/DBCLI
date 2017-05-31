@@ -120,8 +120,11 @@ bool white_spaces(vector<string> *entrance){
 bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it){
     uint32 i_tables_actives = dbh.sb.itables_count - dbh.sb.free_itables_count;
     uint32 checked = 0;
-    while(checked < i_tables_actives){
-        for(uint32 i =0; i < dbh.sb.itables_count; i++){
+    //while(checked < i_tables_actives){
+        for(uint32 i =0; checked < i_tables_actives && i < dbh.sb.itables_count; i++){
+            if(!is_block_in_use(dbh.itable_bitmap,i))
+                continue;
+
             read_itable(dbh,it,i);
             if(strcmp(it->name,name.c_str())==0){
                 //cout<<"index itable f: "<<i<<endl;
@@ -130,7 +133,7 @@ bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it){
             if(it->first_block != (uint32)-1)
                 checked++;
         }
-    }
+    //}
     return false;
 }
 vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it){
@@ -142,6 +145,18 @@ vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it){
         blocks->push_back(block);
         memcpy((void*)&ptr,block,BLOCK_PTR_SIZE);
         cout<<"leyo"<<endl;
+    }while(ptr != (uint32)-1 );
+    return blocks;
+}
+
+vector<uint32> * get_all_tables_used_blocks(struct Database_Handler dbh,struct i_table it){
+    vector<uint32> * blocks = new vector<uint32>();
+    uint32 ptr  = it.first_block;
+    do{
+        blocks->push_back(ptr);
+        char block[BLOCK_SIZE];
+        read_block(dbh,block,ptr);
+        memcpy((void*)&ptr,block,BLOCK_PTR_SIZE);
     }while(ptr != (uint32)-1 );
     return blocks;
 }

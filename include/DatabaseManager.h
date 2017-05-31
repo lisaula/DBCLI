@@ -18,6 +18,7 @@ class DatabaseManager
         DatabaseManager();
         virtual ~DatabaseManager();
         void delete_command(vector<string> entrance);
+        void drop_table(string table_name);
         void update_command(vector<string> entrance);
     protected:
 

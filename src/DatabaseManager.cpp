@@ -684,18 +684,35 @@ void DatabaseManager::delete_command(vector<string> entrance){
         }
 
         write_record(dbh,it, block_field,records_count-1);
-        /*string s = "   ";
-        for(int i = 0; i< p_fields.size(); i++){
-            int pos = p_field_is_contained(p_fields[i],fields);
-            struct field f = fields[pos];
-            //cout<<"pading "<<get_field_padding(f,fields)<<" of "<<p_fields[i]<<endl;
-            char *value = &block_field[get_field_padding(f,fields)];
-            s = print_on_column(s,value,fields[pos].size,pad[i],(Type)fields[pos].type,(i == p_fields.size()-1));
-            //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
-        }
-        cout<<s;*/
     }
     printMsg("Deleted successfully");
+}
+
+void DatabaseManager::drop_table(string table_name){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
+    struct i_table it;
+    if(!find_i_table(dbh,table_name, &it)){
+        printMsg("Couldn't find table "+table_name);
+        return;
+    }
+
+    vector<uint32> * blocks = get_all_tables_used_blocks(dbh,it);
+    for(uint32 i=0; i<blocks->size(); i++){
+        setBlock_unuse(dbh.blocks_bitmap,(*blocks)[i]);
+    }
+
+    setBlock_unuse(dbh.itable_bitmap,it.index);
+    dbh.sb.free_blocks_count+= blocks->size();
+    dbh.sb.free_database_space += it.table_size;
+    dbh.sb.free_itables_count+=1;
+
+    //writing process
+    write_bitmap(use,dbh.blocks_bitmap,dbh.blocks_bitmap_size,dbh.sb.ptr_blocks_bitmap);
+    write_bitmap(use,dbh.itable_bitmap,dbh.itable_bitmap_size,dbh.sb.ptr_itable_bipmap);
+    write_SB(dbh);
 }
 
 void DatabaseManager::update_command(vector<string> entrance){

@@ -68,7 +68,7 @@ struct field{
     int type;
     int size;
 };
-
+vector<uint32> * get_all_tables_used_blocks(struct Database_Handler dbh,struct i_table it);
 void write_record(struct Database_Handler dbh, struct i_table it, char * block_field, uint32 index);
 int p_field_is_contained(string p_field, vector<struct field> fields);
 vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it);
