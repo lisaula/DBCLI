@@ -8,6 +8,8 @@ class DatabaseManager
         string use;
         struct Database_Handler dbh;
         void create_database(string name, UINT32 database_size);
+        void print_database_info();
+        void print_table_info(string name);
         void use_database(string name);
         void drop_database(string name);
         void create_table(vector<string>);

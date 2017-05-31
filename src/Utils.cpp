@@ -124,7 +124,7 @@ bool find_i_table(struct Database_Handler dbh,string name, struct i_table *it){
         for(uint32 i =0; i < dbh.sb.itables_count; i++){
             read_itable(dbh,it,i);
             if(strcmp(it->name,name.c_str())==0){
-                cout<<"index itable f: "<<i<<endl;
+                //cout<<"index itable f: "<<i<<endl;
                 return true;
             }
             if(it->first_block != (uint32)-1)

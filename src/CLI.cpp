@@ -77,6 +77,19 @@ void CLI::init(){
                 std::cerr << ia.what() << '\n';
                 continue;
             }
+        }else if(entrance[0] == "PRINT"){
+            if(!validateEntranceLen(entrance,2))
+                continue;
+            if(entrance[1]== "DATABASE"){
+                dbm->print_database_info();
+            }else if(entrance[1] == "TABLE"){
+                if(!validateEntranceLen(entrance,3))
+                    continue;
+                dbm->print_table_info(entrance[2]);
+            }else{
+                printMsg("Command not supported");
+                continue;
+            }
         }
         else if(entrance[0] == "UPDATE"){
             printMsg("Update command.");

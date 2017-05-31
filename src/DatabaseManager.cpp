@@ -48,18 +48,16 @@ void DatabaseManager::create_database(string name, UINT32 database_size){
     */
 
     struct i_table it;
-    memset(&it.name,0,MAX_STRING_SIZE);
+    memset(it.name,0,MAX_STRING_SIZE);
     it.first_block = -1;
     it.records_count = -1;
     it.fields_count = -1;
     it.table_size = -1;
     it.record_size = -1;
+    it.index = -1;
     for(uint32 i=0; i < dbh.sb.itables_count;i++){
-        it.index = i;
         output_file.write(((char*)&it), ITABLE_SIZE);
     }
-
-
     //WRITTING ITABLE BITMAP
     dbh.sb.ptr_itable_bipmap = output_file.tellp();
     dbh.itable_bitmap_size = dbh.sb.itables_count/CHAR_BITS_SIZE;
@@ -89,6 +87,7 @@ void DatabaseManager::create_database(string name, UINT32 database_size){
 
     //WRITING SUPERBLOCK
     dbh.sb.FD_size = fs_blocks_used * BLOCK_SIZE;
+    dbh.sb.free_database_space = dbh.sb.database_size - dbh.sb.FD_size;
     output_file.seekp(0, ios::beg);
     output_file.write(((char*)&dbh.sb), SB_SIZE);
 
@@ -99,14 +98,23 @@ void DatabaseManager::create_database(string name, UINT32 database_size){
     output_file.write(block, BLOCK_SIZE);
     output_file.close();
     printMsg("Create database successfully");
-    cout<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
-    cout<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
+    //cout<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
+    //cout<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
+    print_database_info();
+}
+
+void DatabaseManager::print_database_info(){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
     cout<<"database size: "<<dbh.sb.database_size<<endl;
+    cout<<"free database space: "<<dbh.sb.free_database_space<<endl;
+    cout<<"database metadata size: "<<dbh.sb.FD_size<<endl;
     cout<<"blocks count: "<<dbh.sb.blocks_count<<endl;
     cout<<"free blocks count: "<<dbh.sb.free_blocks_count<<endl;
-    cout<<"free itables count: "<<dbh.sb.free_itables_count<<endl;
     cout<<"itables count: "<<dbh.sb.itables_count<<endl;
-    cout<<"DataBase metadata size: "<<dbh.sb.FD_size<<endl;
+    cout<<"free itables count: "<<dbh.sb.free_itables_count<<endl;
     cout<<"itable bitmap pointer: "<<dbh.sb.ptr_itable_bipmap<<endl;
     cout<<"blocks bitmap pointer: "<<dbh.sb.ptr_blocks_bitmap<<endl;
 }
@@ -149,16 +157,9 @@ void DatabaseManager::use_database(string name){
 
     in.close();
     printMsg("Database loaded successfully");
-    cout<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
-    cout<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
-    cout<<"database size: "<<dbh.sb.database_size<<endl;
-    cout<<"blocks count: "<<dbh.sb.blocks_count<<endl;
-    cout<<"free blocks count: "<<dbh.sb.free_blocks_count<<endl;
-    cout<<"itables count: "<<dbh.sb.itables_count<<endl;
-    cout<<"free itables count: "<<dbh.sb.free_itables_count<<endl;
-    cout<<"DataBase metadata size: "<<dbh.sb.FD_size<<endl;
-    cout<<"itable bitmap pointer: "<<dbh.sb.ptr_itable_bipmap<<endl;
-    cout<<"blocks bitmap pointer: "<<dbh.sb.ptr_blocks_bitmap<<endl;
+    //cout<<next_available(dbh.itable_bitmap,dbh.sb.itables_count)<<endl;
+    //cout<<next_available(dbh.blocks_bitmap,dbh.sb.blocks_count)<<endl;
+    print_database_info();
 }
 void DatabaseManager::drop_database(string name){
     name += ".dat";
@@ -227,19 +228,24 @@ void DatabaseManager::insert_command(vector<string> entrance){
         uint32 difference = it.record_size - free_space;
         memcpy(&new_block[BLOCK_PTR_SIZE],&block_field[free_space],difference);
         write_block(dbh,new_block,it.last_block);
+        setBlock_use(dbh.blocks_bitmap,it.last_block);
+        write_bitmap(use,dbh.blocks_bitmap,dbh.blocks_bitmap_size,dbh.sb.ptr_blocks_bitmap);
+        if(dbh.sb.free_blocks_count>0)
+            dbh.sb.free_blocks_count -=1;
     }
     it.table_size += it.record_size;
     it.records_count++;
-    cout<<"index itable: "<<it.index<<endl;
-    cout<<"firsts itable: "<<it.first_block<<endl;
-    cout<<"last itable: "<<it.last_block<<endl;
+    dbh.sb.free_database_space -= it.record_size;
+    write_SB(dbh);
+    //cout<<"index itable: "<<it.index<<endl;
+    //cout<<"firsts itable: "<<it.first_block<<endl;
+    //cout<<"last itable: "<<it.last_block<<endl;
     write_itable(dbh,it,it.index);
     delete(fields);
     printMsg("Insert command executed successfully");
 }
 
 void DatabaseManager::validate_fields(vector<pair<string,string> > fields_value,vector<struct field> fields, char* block){
-    bool f1 = false;
     vector<struct field> found ;
     vector<pair<string,string> > not_founds;
     while(fields_value.size()> 0){
@@ -367,6 +373,8 @@ void DatabaseManager::create_table(vector<string>entrance){
     setBlock_use(dbh.itable_bitmap,n_itable);
     struct i_table it;
     memset(it.name,0,MAX_STRING_SIZE);
+    it.index = n_itable;
+    it.records_count =0;
     it.record_size =0;
     strcpy(it.name,entrance[2].c_str());
     erase_from_vector(&entrance, 3);
@@ -418,6 +426,10 @@ void DatabaseManager::create_table(vector<string>entrance){
     it.last_block = n_block;
     it.records_count =0;
     it.table_size =(it.fields_count*FIELD_SIZE);
+
+    //updating database free space
+    dbh.sb.free_database_space -= it.table_size;
+
     char block[BLOCK_SIZE];
     memset(block,0, BLOCK_SIZE);
     uint32 ptr_next_block = -1;
@@ -444,6 +456,48 @@ void DatabaseManager::create_table(vector<string>entrance){
     write_bitmap(use,dbh.blocks_bitmap,dbh.blocks_bitmap_size,dbh.sb.ptr_blocks_bitmap);
     write_bitmap(use,dbh.itable_bitmap,dbh.itable_bitmap_size,dbh.sb.ptr_itable_bipmap);
     printMsg("Create table successfully");
+}
+
+void DatabaseManager::print_table_info(string table_name){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
+    struct i_table it;
+    if(!find_i_table(dbh,table_name, &it)){
+        printMsg("Couldn't find table "+table_name);
+        return;
+    }
+
+    char block[BLOCK_SIZE];
+    read_block(dbh,block,it.first_block);
+    vector<struct field> fields;
+    int fields_count =0;
+    while (fields_count < it.fields_count){
+        struct field f;
+        uint32 pos = BLOCK_PTR_SIZE+(fields_count*FIELD_SIZE);
+        if(pos < BLOCK_SIZE){
+            memcpy((char*)&f,&block[pos],FIELD_SIZE);
+            fields.push_back(f);
+            fields_count++;
+        }else{
+            printMsg("block finished");
+            break;
+        }
+    }
+    cout<<"Name: "<<it.name<<endl;
+    cout<<"Index: "<<it.index<<endl;
+    cout<<"Records storaged: "<<it.records_count<<endl;
+    cout<<"Records size: "<<it.record_size<<endl;
+    cout<<"Table bytes storaged: "<<it.table_size<<endl;
+    cout<<"Fields: "<<endl;
+    cout<<"\tcount: "<<it.fields_count<<endl;
+
+    for(uint32 i = 0; i< fields.size(); i++){
+        cout<<"\tName: "<<fields[i].name<<endl;
+        cout<<"\tType: "<<fields[i].type<<endl;
+        cout<<"\tSize: "<<fields[i].size<<endl;
+    }
 }
 
 void DatabaseManager::select_command(vector<string> entrance){

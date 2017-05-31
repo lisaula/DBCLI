@@ -40,6 +40,7 @@ struct SB{
     uint32 free_itables_count;
     uint64 ptr_itable_bipmap;
     uint64 FD_size;
+    uint64 free_database_space;
 };
 
 struct Database_Handler{
