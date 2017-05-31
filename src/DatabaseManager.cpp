@@ -713,6 +713,7 @@ void DatabaseManager::drop_table(string table_name){
     write_bitmap(use,dbh.blocks_bitmap,dbh.blocks_bitmap_size,dbh.sb.ptr_blocks_bitmap);
     write_bitmap(use,dbh.itable_bitmap,dbh.itable_bitmap_size,dbh.sb.ptr_itable_bipmap);
     write_SB(dbh);
+    printMsg("Drop table "+table_name+" successfully.");
 }
 
 void DatabaseManager::update_command(vector<string> entrance){

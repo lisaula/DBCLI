@@ -144,7 +144,7 @@ vector<char*> *read_all_table(struct Database_Handler dbh,struct i_table it){
         read_block(dbh,block,ptr);
         blocks->push_back(block);
         memcpy((void*)&ptr,block,BLOCK_PTR_SIZE);
-        cout<<"leyo"<<endl;
+        //cout<<"leyo"<<endl;
     }while(ptr != (uint32)-1 );
     return blocks;
 }
