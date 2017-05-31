@@ -211,17 +211,16 @@ void DatabaseManager::insert_command(vector<string> entrance){
     uint32 free_space = BLOCK_SIZE - used_space;
     if(it.record_size <= free_space){
         char new_block[BLOCK_SIZE];
-        memset(new_block,0,BLOCK_SIZE);
+        //memset(new_block,0,BLOCK_SIZE);
         read_block(dbh,new_block,it.last_block);
         //cout<<"guardo pos: "<<used_space<<" en: "<<it.last_block<<" fs: "<<free_space<<endl;
         memcpy(&new_block[used_space],block_field,it.record_size);
         write_block(dbh,new_block,it.last_block);
     }else{
         char new_block[BLOCK_SIZE];
-        memset(new_block,0,BLOCK_SIZE);
+        //memset(new_block,0,BLOCK_SIZE);
         read_block(dbh,new_block,it.last_block);
-        uint32 pos = BLOCK_SIZE - free_space;
-        memcpy(&new_block[pos],block_field,free_space);
+        memcpy(&new_block[used_space],block_field,free_space);
         uint32 n_block = next_available(dbh.blocks_bitmap,dbh.sb.blocks_count);
         memcpy(&new_block[0],(void*)&n_block,BLOCK_PTR_SIZE);
         write_block(dbh,new_block,it.last_block);
@@ -550,18 +549,17 @@ void DatabaseManager::select_command(vector<string> entrance){
     }
     cout<<"   ";
     vector<int> pad;
-    int count_pad = 1, l_p_c =0;
+    int count_pad = 3, l_p_c =0;
     for(uint32 i =0; i< fields.size();i++){
         cout<<fields[i].name<<"          ";
-        string s = "";
         int p_c = 0;
-        for(uint32 p = strlen(fields[i].name)+12; p<fields[i].size;p++ ){
+        for(uint32 p = strlen(fields[i].name)+10; p<fields[i].size;p++ ){
             cout<<" ";
             p_c++;
         }
         if(i!=0){
             //cout<<"lpc "<<l_p_c<<endl;
-            count_pad += strlen(fields[i-1].name)+(12+l_p_c);
+            count_pad += strlen(fields[i-1].name)+(10+l_p_c);
         }
         l_p_c = p_c;
         pad.push_back(count_pad);
@@ -578,21 +576,29 @@ void DatabaseManager::select_command(vector<string> entrance){
     uint32 records_count =0, blocks_count =1;
     while(records_count < it.records_count){
         char block_field[it.record_size];
-        uint32 space_available = (blocks_count*BLOCK_SIZE)-first_pos;
+        uint32 space_available = BLOCK_SIZE-first_pos;
         if(it.record_size <= space_available){
-            uint32 pos = BLOCK_SIZE - space_available;
-            //cout<<"record pos: "<<pos<<endl;
             memcpy(block_field,&block[first_pos],it.record_size);
-            string s = "   ";
-            for(int i = 0; i< fields.size(); i++){
-                char *value = &block_field[get_field_padding(fields[i],fields)];
-                s = print_on_column(s,value,fields[i].size,pad[i],(Type)fields[i].type,(i == fields.size()-1));
-                //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
-            }
-            cout<<s;
             records_count++;
             first_pos += it.record_size;
+        }else{
+            memcpy(block_field,&block[first_pos],space_available);
+            uint32 ptr_next_block=0;
+            memcpy(&ptr_next_block,block,BLOCK_PTR_SIZE);
+            read_block(dbh,block,ptr_next_block);
+            first_pos = BLOCK_PTR_SIZE;
+            uint32 difference = it.record_size - space_available;
+            memcpy(&block_field[space_available],&block[first_pos],difference);
+            records_count++;
+            first_pos += difference;
         }
+        string s = "   ";
+        for(int i = 0; i< fields.size(); i++){
+            char *value = &block_field[get_field_padding(fields[i],fields)];
+            s = print_on_column(s,value,fields[i].size,pad[i],(Type)fields[i].type,(i == fields.size()-1));
+            //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
+        }
+        cout<<s;
     }
 }
 
