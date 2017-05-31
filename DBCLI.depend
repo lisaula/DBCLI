@@ -43,13 +43,13 @@
 	<windows.h>
 	"Utils.h"
 
-1496249274 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
+1496258171 source:g:\2017\2do tri\tdb2\cli_db\src\cli.cpp
 	"CLI.h"
 
 1496256403 source:g:\2017\2do tri\tdb2\cli_db\src\databasemanager.cpp
 	"DatabaseManager.h"
 
-1496256442 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
+1496262993 source:g:\2017\2do tri\tdb2\cli_db\src\utils.cpp
 	"Utils.h"
 
 1496080442 g:\2017\2do tri\tdb2\cli_db\include\type.h

@@ -682,7 +682,7 @@ void DatabaseManager::update_command(vector<string> entrance){
     for(int i =0; i < fields_value.size();i++){
         p_fields.push_back(fields_value[i].first);
     }
-    print_table_header(&p_fields,fields,&pad);
+    //print_table_header(&p_fields,fields,&pad);
 
     uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
     uint32 initial_pos = first_pos;
