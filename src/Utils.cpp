@@ -168,6 +168,45 @@ int p_field_is_contained(string p_field, vector<struct field> fields){
     return -1;
 }
 
+void write_record(struct Database_Handler dbh, struct i_table it, char * block_field, uint32 index){
+    uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
+    uint32 pos = first_pos + (index*it.record_size) + it.record_size;
+    cout<<pos<<" pos"<<endl;
+    uint32 block_index = ceil((double)pos / (double)BLOCK_SIZE);
+    cout<<block_index<<" b index"<<endl;
+    char block[BLOCK_SIZE];
+    uint32 blocks_read = 0;
+    uint32 ptr = it.first_block;
+    uint32 current_block;
+    char last_block [BLOCK_SIZE];
+    uint32 last_block_index;
+    do{
+        last_block_index = current_block;
+        current_block = ptr;
+        cout<<current_block<<" current index"<<endl;
+        memcpy(last_block,block,BLOCK_SIZE);
+        read_block(dbh,block,ptr);
+        memcpy(&ptr,block,BLOCK_PTR_SIZE);
+        blocks_read++;
+
+    }while( block_index != blocks_read );
+    pos = pos - ((block_index-1) * BLOCK_SIZE);
+    if(it.record_size <= (pos- BLOCK_PTR_SIZE)){
+        pos -= it.record_size;
+        cout<<"pos: "<<pos<<" en "<<current_block<<endl;
+        memcpy(&block[pos],block_field,it.record_size);
+        write_block(dbh,block,current_block);
+    }else{
+        uint32 rest = (pos - BLOCK_PTR_SIZE);
+        uint32 difference = it.record_size - rest;
+        memcpy(&block[BLOCK_PTR_SIZE],&block_field[difference],rest);
+        write_block(dbh,block,current_block);
+        uint32 init = BLOCK_SIZE - difference;
+        memcpy(&last_block[init],block_field,difference);
+        write_block(dbh,last_block,last_block_index);
+    }
+}
+
 string from_int_to_string(int number){
     std::stringstream ss;
     ss << number;

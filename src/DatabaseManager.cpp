@@ -261,8 +261,11 @@ void DatabaseManager::validate_fields(vector<pair<string,string> > fields_value,
                     if(char_value.size() > fields[x].size){
                         throw std::invalid_argument("Error char value \""+char_value+"\" exceed its size");
                     }
+                    char new_char[fields[x].size];
+                    memset(new_char,0,fields[x].size);
+                    memcpy(new_char,char_value.c_str(), char_value.size());
                     //cout<<"pading "<<get_field_padding(fields[x], fields)<<" val: "<<char_value.c_str()<<endl;
-                    memcpy(&block[get_field_padding(fields[x], fields)],char_value.c_str(),char_value.size());
+                    memcpy(&block[get_field_padding(fields[x], fields)],new_char,fields[x].size);
                 }else if(fields[x].type == INT_T){
                     int n = validate_int_value(fields_value[i].second);
                     memcpy(&block[get_field_padding(fields[x], fields)],(void*)&n,fields[x].size);
@@ -570,7 +573,7 @@ void DatabaseManager::select_command(vector<string> entrance){
     vector<int> pad;
     print_table_header(&p_fields,fields,&pad);
     uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
-    uint32 records_count =0, blocks_count =1;
+    uint32 records_count =0;
     while(records_count < it.records_count){
         char block_field[it.record_size];
         uint32 space_available = BLOCK_SIZE-first_pos;
@@ -611,15 +614,148 @@ void DatabaseManager::select_command(vector<string> entrance){
     }
 }
 
+void DatabaseManager::delete_command(vector<string> entrance){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
+    if(!validateEntranceLen(entrance,2))
+        return;
+    string table_name = entrance[1];
+    erase_from_vector(&entrance,2);
+}
+
+void DatabaseManager::update_command(vector<string> entrance){
+    if(use == ""){
+        printMsg("No database has been specified to use.");
+        return;
+    }
+    if(!validateEntranceLen(entrance,2))
+        return;
+    string table_name = entrance[1];
+    erase_from_vector(&entrance,2);
+
+    /*--------------------*/
+    vector<pair<string,string> > fields_value;
+    while(entrance.size()>0 && entrance[0]!= "WHERE"){
+        if(!validateEntranceLen(entrance,3)){
+            printMsg("Expected: <COLUMN_NAME> = <VALUE>");
+            return;
+        }
+        pair<string,string> p(entrance[0], entrance[2]);
+        fields_value.push_back(p);
+        erase_from_vector(&entrance,3);
+    }
+
+    struct i_table it;
+    if(!find_i_table(dbh,table_name, &it)){
+        printMsg("Couldn't find table "+table_name);
+        return;
+    }
+
+    char block[BLOCK_SIZE];
+    read_block(dbh,block,it.first_block);
+    vector<struct field> fields;
+    int fields_count =0;
+    while (fields_count < it.fields_count){
+        struct field f;
+        uint32 pos = BLOCK_PTR_SIZE+(fields_count*FIELD_SIZE);
+        if(pos < BLOCK_SIZE){
+            memcpy((char*)&f,&block[pos],FIELD_SIZE);
+            fields.push_back(f);
+            fields_count++;
+        }else{
+            printMsg("block finished");
+            break;
+        }
+    }
+
+    //GETTING WHERE
+    pair<int,string> p;
+    bool is_where = get_where_statement(entrance, &p, fields);
+    if(!is_where)
+        throw std::invalid_argument("Error: update without where.");
+
+
+    vector<int> pad;
+    vector<string> p_fields;
+    for(int i =0; i < fields_value.size();i++){
+        p_fields.push_back(fields_value[i].first);
+    }
+    print_table_header(&p_fields,fields,&pad);
+
+    uint32 first_pos = (it.table_size - (it.records_count* it.record_size ));
+    uint32 initial_pos = first_pos;
+    uint32 records_count =0;
+    while(records_count < it.records_count){
+        char block_field[it.record_size];
+        uint32 space_available = BLOCK_SIZE-first_pos;
+        if(it.record_size <= space_available){
+            memcpy(block_field,&block[first_pos],it.record_size);
+            records_count++;
+            first_pos += it.record_size;
+        }else{
+            memcpy(block_field,&block[first_pos],space_available);
+            uint32 ptr_next_block=0;
+            memcpy(&ptr_next_block,block,BLOCK_PTR_SIZE);
+            read_block(dbh,block,ptr_next_block);
+            first_pos = BLOCK_PTR_SIZE;
+            uint32 difference = it.record_size - space_available;
+            memcpy(&block_field[space_available],&block[first_pos],difference);
+            records_count++;
+            first_pos += difference;
+        }
+        byte b = block_field[0];
+        if(b ==1 )
+            continue;
+        if(is_where){
+            bool pass = pass_where(block_field,p,fields);
+            if(!pass)
+                continue;
+        }
+        struct field f = fields[p.first];
+        alter_block(fields_value,block_field,f,fields);
+
+        write_record(dbh,it, block_field,records_count-1);
+
+
+        /*string s = "   ";
+        for(int i = 0; i< p_fields.size(); i++){
+            int pos = p_field_is_contained(p_fields[i],fields);
+            struct field f = fields[pos];
+            //cout<<"pading "<<get_field_padding(f,fields)<<" of "<<p_fields[i]<<endl;
+            char *value = &block_field[get_field_padding(f,fields)];
+            s = print_on_column(s,value,fields[pos].size,pad[i],(Type)fields[pos].type,(i == p_fields.size()-1));
+            //(void*)value,fields[i].size,pad[i],fields[i].type,(i==fields.size-1
+        }
+        cout<<s;*/
+    }
+    printMsg("Updated successfully");
+}
+
+void DatabaseManager::alter_block(vector<pair<string,string> > fields_value,char *block_field,struct field f,vector<struct field> fields){
+    vector<struct field> new_fields;
+    for(uint32 i = 0; i < fields.size(); i++){
+        for(uint32 x=0; x< fields_value.size(); x++){
+            if(strcmp( fields_value[x].first.c_str(),fields[i].name ) ==0){
+                new_fields.push_back(fields[i]);
+            }
+        }
+    }
+
+    validate_fields(fields_value,new_fields,block_field);
+}
+
 bool DatabaseManager::pass_where(char* block_field, pair<int, string> p, vector<struct field> fields){
     struct field f = fields[p.first];
 
+    bool return_value =false;
     switch (f.type){
         case INT_T:{
             int n = validate_int_value(p.second);
             int n_v =0;
             memcpy(&n_v,&block_field[get_field_padding(f,fields)],f.size);
-            return n_v == n;
+            return_value =  n_v == n;
             break;
         }
         case CHAR_T:{
@@ -627,18 +763,18 @@ bool DatabaseManager::pass_where(char* block_field, pair<int, string> p, vector<
             char value[f.size+1];
             memcpy(value,&block_field[get_field_padding(f,fields)],f.size);
             value[f.size]= (char)NULL;
-            return (strcmp( value,s.c_str() ) == 0);
+            return_value = (strcmp( value,s.c_str() ) == 0);
             break;
         }
         case DOUBLE_T:{
             double d = validate_double_value(p.second);
             double d_v;
             memcpy(&d_v,&block_field[get_field_padding(f,fields)],f.size);
-            return d_v == d;
+            return_value = d_v == d;
             break;
         }
         }
-    return false;
+    return return_value;
 }
 
 void DatabaseManager::print_table_header(vector<string> *p_fields, vector<struct field> fields, vector<int>* pad){

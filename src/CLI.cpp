@@ -1,5 +1,5 @@
 #include "CLI.h"
-const string commands = "1. CREATE \n\tDATABASE <NAME> <SIZE_IN_GB>[;]\n\tTABLE <NAME> \n\t\t <FIELD_NAME> <TYPE(SIZE)>[;]\n>"
+const string commands = "1. CREATE \n\tDATABASE <NAME> <SIZE_IN_GB>[;]\n\tTABLE <NAME> \n\t\t <FIELD_NAME> <TYPE(SIZE)>[;]\n"
 "2. DROP \n\tDATABASE <NAME>[;]\n\tTABLE <NAME>[;]\n"
 "3. INSERT INTO <TABLE>\n\t<COLUMN1> = <VALUE>\n\t<COLUMN2> = <VALUE>\n\t<COLUMN...> = <VALUE> [;]\n"
 "4. UPDATE <TABLE>\n\t<COLUMN1> = <VALUE>\n\t<COLUMN2> = <VALUE>\n\t<COLUMN...> = <VALUE>\n   WHERE [CONDITION] [;]\n"
@@ -92,10 +92,22 @@ void CLI::init(){
             }
         }
         else if(entrance[0] == "UPDATE"){
-            printMsg("Update command.");
+            try{
+                dbm->update_command(entrance);
+
+            }catch (const std::invalid_argument& ia) {
+                std::cerr << ia.what() << '\n';
+                continue;
+            }
         }
         else if(entrance[0] == "DELETE"){
-            printMsg("Delete command.");
+            try{
+                dbm->delete_command(entrance);
+
+            }catch (const std::invalid_argument& ia) {
+                std::cerr << ia.what() << '\n';
+                continue;
+            }
         }
         else if(entrance[0] == "SELECT"){
             try{
